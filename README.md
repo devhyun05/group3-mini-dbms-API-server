@@ -1,5 +1,8 @@
 # group3-mini-dbms-API-server
 
+3줄 정도 간단소개 → 시연 → 흐름도 → thread pool 구성 (스펙) → 락 방식 (2개)→ 벤치마크 → 마무리
+
+
 ## 흐름도 
 ```mermaid
 flowchart LR
@@ -32,3 +35,12 @@ flowchart LR
 2. **DB 실행 락**으로 파일/테이블 접근을 안전하게 직렬화
 
 즉, **네트워크 처리의 동시성**과 **데이터 일관성** 사이에서 균형을 맞춘 설계
+
+현재 프로젝트는 서버는 멀티쓰레드 구조이지만, DB 실행 구간은 mutex로 직렬화되어 한 번에 하나의 SQL만 처리합니다. 따라서 worker를 과도하게 늘려도 DB 처리량이 크게 증가하지 않고, 오히려 context switching 오버헤드만 커질 수 있습니다. 그래서 저희는 스레드 풀 크기를 CPU 코어 수 기준의 고정 크기로 제한했습니다.”
+
+<img width="1600" height="823" alt="thread_pool" src="https://github.com/user-attachments/assets/2dc88aa3-cb59-478c-ba4d-0b039e788d5c" />
+SELECT * FROM users WHERE id = 1;
+INSERT INTO users VALUES ('carol@test.com','Carol');
+SELECT * FROM users WHERE email = 'carol@test.com';
+UPDATE users SET name = 'Carolyn' WHERE email = 'carol@test.com';
+DELETE FROM users WHERE id = 3;
