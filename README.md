@@ -84,6 +84,8 @@ DB 실행 구간은 mutex로 직렬화되어 있기 때문에, 특정 시점에 
 
 ## 벤치마크 
 
+<img width="1408" height="768" alt="image" src="https://github.com/user-attachments/assets/8cf55770-261e-48e3-ac54-ed86465d342f" />
+
 대표 쿼리 5개를 기준으로 worker thread 수를 `4 / 8 / 12 / 16 / 20`으로 바꿔가며 처리량을 비교했습니다.
 
 | 쿼리 | 4개 | 8개 | 12개 | 16개 | 20개 | 최고 |
