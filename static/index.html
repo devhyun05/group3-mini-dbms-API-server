@@ -39,13 +39,12 @@
     }
 
     .page {
-      width: min(1100px, calc(100vw - 32px));
+      width: min(960px, calc(100vw - 32px));
       margin: 32px auto;
       display: grid;
       gap: 20px;
     }
 
-    .hero,
     .panel {
       background: var(--panel);
       backdrop-filter: blur(16px);
@@ -54,69 +53,13 @@
       box-shadow: var(--shadow);
     }
 
-    .hero {
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: auto -100px -120px auto;
-      width: 320px;
-      height: 320px;
-      background: radial-gradient(circle, rgba(20, 92, 118, 0.18), transparent 68%);
-      pointer-events: none;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(20, 92, 118, 0.08);
-      color: var(--accent);
-      font-size: 13px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      margin: 16px 0 12px;
-      font-size: clamp(2rem, 4vw, 3.3rem);
-      line-height: 1.02;
-      letter-spacing: -0.03em;
-    }
-
-    .hero p {
-      max-width: 760px;
-      margin: 0;
-      color: var(--muted);
-      font-size: 17px;
-      line-height: 1.6;
-    }
-
-    .layout {
-      display: grid;
-      gap: 20px;
-      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
-    }
-
     .panel {
       padding: 22px;
     }
 
     .panel h2 {
-      margin: 0 0 10px;
-      font-size: 1.35rem;
-    }
-
-    .panel p {
       margin: 0 0 18px;
-      color: var(--muted);
-      line-height: 1.55;
+      font-size: 1.35rem;
     }
 
     .editor {
@@ -172,7 +115,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
-      margin-top: 16px;
+      margin-top: 18px;
       align-items: center;
     }
 
@@ -219,38 +162,6 @@
     .ghost-button:hover,
     .ghost-button:focus-visible {
       background: rgba(20, 92, 118, 0.14);
-      transform: translateY(-1px);
-    }
-
-    .hint {
-      margin-left: auto;
-      color: var(--muted);
-      font-size: 13px;
-      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
-    }
-
-    .sample-list {
-      display: grid;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .sample-button {
-      width: 100%;
-      text-align: left;
-      padding: 14px;
-      border-radius: 16px;
-      background: var(--panel-strong);
-      border: 1px solid rgba(30, 42, 50, 0.08);
-      color: var(--text);
-      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .sample-button:hover,
-    .sample-button:focus-visible {
-      background: #fff;
       transform: translateY(-1px);
     }
 
@@ -336,73 +247,29 @@
       border: 1px dashed rgba(30, 42, 50, 0.12);
     }
 
-    .footer-note {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.6;
-      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
-    }
-
-    @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .hint {
-        width: 100%;
-        margin-left: 0;
-      }
-    }
   </style>
 </head>
 <body>
   <main class="page">
-    <section class="hero">
-      <span class="eyebrow">Mini DBMS API Server</span>
-      <h1>브라우저에서 바로 SQL을 실행하고<br>결과를 테이블로 확인하세요.</h1>
-      <p>
-        이 화면은 서버의 <code>POST /query</code> API를 감싸는 SQL 콘솔입니다.
-        <code>SELECT</code>는 결과 테이블을, <code>INSERT / UPDATE / DELETE</code>는 처리 메시지를,
-        에러는 바로 아래에서 확인할 수 있습니다.
-      </p>
-    </section>
+    <section class="panel">
+      <h2>SQL Console</h2>
 
-    <section class="layout">
-      <section class="panel">
-        <h2>SQL Console</h2>
-        <p>한 번에 한 개의 SQL 문만 실행합니다. 원하는 쿼리를 입력하고 실행해보세요.</p>
-
-        <div class="editor">
-          <div class="editor-bar">
-            <span class="editor-dots"><span></span><span></span><span></span></span>
-            <span>query.sql</span>
-          </div>
-          <textarea id="sqlInput" spellcheck="false">SELECT * FROM users WHERE id = 1;</textarea>
+      <div class="editor">
+        <div class="editor-bar">
+          <span class="editor-dots"><span></span><span></span><span></span></span>
+          <span>query.sql</span>
         </div>
+        <textarea id="sqlInput" spellcheck="false">SELECT * FROM users WHERE id = 1;</textarea>
+      </div>
 
-        <div class="toolbar">
-          <button id="runButton" class="run-button" type="button">실행하기</button>
-          <button id="clearButton" class="ghost-button" type="button">입력 초기화</button>
-          <span class="hint">Tip: <code>Ctrl/Cmd + Enter</code>로도 실행할 수 있습니다.</span>
-        </div>
-      </section>
-
-      <aside class="panel">
-        <h2>Sample Queries</h2>
-        <p>아래 예시를 눌러 입력창에 바로 채울 수 있습니다.</p>
-        <div class="sample-list">
-          <button class="sample-button" type="button" data-query="SELECT * FROM users WHERE id = 1;">SELECT * FROM users WHERE id = 1;</button>
-          <button class="sample-button" type="button" data-query="SELECT * FROM users WHERE email = 'alice@test.com';">SELECT * FROM users WHERE email = 'alice@test.com';</button>
-          <button class="sample-button" type="button" data-query="INSERT INTO users VALUES ('carol@test.com','Carol');">INSERT INTO users VALUES ('carol@test.com','Carol');</button>
-          <button class="sample-button" type="button" data-query="UPDATE users SET name = 'Caroline' WHERE id = 3;">UPDATE users SET name = 'Caroline' WHERE id = 3;</button>
-          <button class="sample-button" type="button" data-query="DELETE FROM users WHERE id = 3;">DELETE FROM users WHERE id = 3;</button>
-        </div>
-      </aside>
+      <div class="toolbar">
+        <button id="runButton" class="run-button" type="button">실행하기</button>
+        <button id="clearButton" class="ghost-button" type="button">입력 초기화</button>
+      </div>
     </section>
 
     <section class="panel">
       <h2>Execution Result</h2>
-      <p>아래에는 최근 실행 결과가 표시됩니다.</p>
 
       <div class="result-meta" id="resultMeta">
         <span class="pill">대기 중</span>
@@ -414,11 +281,6 @@
 
       <div id="tableArea"></div>
     </section>
-
-    <p class="footer-note">
-      현재 UI는 <code>GET /</code>로 열리고, 실제 쿼리 실행은 동일 서버의 <code>POST /query</code>를 호출합니다.
-      인덱스를 탄 경우에는 응답의 <code>access_path</code>도 함께 표시됩니다.
-    </p>
   </main>
 
   <script>
@@ -428,7 +290,6 @@
     const resultMeta = document.getElementById("resultMeta");
     const statusArea = document.getElementById("statusArea");
     const tableArea = document.getElementById("tableArea");
-    const sampleButtons = document.querySelectorAll(".sample-button");
 
     function setRunningState(isRunning) {
       runButton.disabled = isRunning;
@@ -578,12 +439,6 @@
       }
     });
 
-    sampleButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        sqlInput.value = button.dataset.query;
-        sqlInput.focus();
-      });
-    });
   </script>
 </body>
 </html>

@@ -65,7 +65,7 @@ int db_engine_init(DbEngine *engine, const DbConfig *config) {
 
     memset(engine, 0, sizeof(*engine));
     engine->config = *config;
-    if (pthread_mutex_init(&engine->tables_mutex, NULL) != 0) {
+    if (pthread_mutex_init(&engine->execute_mutex, NULL) != 0) {
         return 0;
     }
     return 1;
@@ -74,13 +74,14 @@ int db_engine_init(DbEngine *engine, const DbConfig *config) {
 int db_engine_execute(DbEngine *engine, const char *sql, DbResult *out) {
     Statement stmt;
     TableCache *tc;
-    int lock_result = 0;
     char normalized_sql[MAX_SQL_LEN];
+    int ok = 0;
 
     if (!engine || !sql || !out) return 0;
 
     db_result_free(out);
     db_result_reset(out);
+    pthread_mutex_lock(&engine->execute_mutex);
     db_executor_bind_context(engine, out);
     set_executor_quiet(engine->config.quiet);
 
@@ -90,8 +91,7 @@ int db_engine_execute(DbEngine *engine, const char *sql, DbResult *out) {
 
     if (!parse_statement(normalized_sql, &stmt)) {
         db_result_set_error(out, "parse_error", "Failed to parse SQL statement.");
-        db_executor_clear_context();
-        return 0;
+        goto done;
     }
     out->statement = stmt.type;
 
@@ -100,19 +100,7 @@ int db_engine_execute(DbEngine *engine, const char *sql, DbResult *out) {
         if (out->error_code[0] == '\0') {
             db_result_set_error(out, "table_not_found", "Table '%s' could not be opened.", stmt.table_name);
         }
-        db_executor_clear_context();
-        return 0;
-    }
-
-    if (stmt.type == STMT_SELECT) {
-        lock_result = pthread_rwlock_rdlock(&tc->rwlock);
-    } else {
-        lock_result = pthread_rwlock_wrlock(&tc->rwlock);
-    }
-    if (lock_result != 0) {
-        db_result_set_error(out, "lock_error", "Failed to lock table '%s'.", stmt.table_name);
-        db_executor_clear_context();
-        return 0;
+        goto done;
     }
 
     switch (stmt.type) {
@@ -133,10 +121,12 @@ int db_engine_execute(DbEngine *engine, const char *sql, DbResult *out) {
             break;
     }
 
-    pthread_rwlock_unlock(&tc->rwlock);
+done:
     out->ok = out->error_code[0] == '\0';
+    ok = out->ok;
     db_executor_clear_context();
-    return out->ok;
+    pthread_mutex_unlock(&engine->execute_mutex);
+    return ok;
 }
 
 void db_result_free(DbResult *result) {
@@ -163,19 +153,11 @@ void db_result_free(DbResult *result) {
 }
 
 void db_engine_shutdown(DbEngine *engine) {
-    int index;
-
     if (!engine) return;
     db_executor_bind_context(engine, NULL);
     close_all_tables();
     db_executor_clear_context();
-    for (index = 0; index < MAX_TABLES; index++) {
-        if (engine->open_tables[index].rwlock_initialized) {
-            pthread_rwlock_destroy(&engine->open_tables[index].rwlock);
-            engine->open_tables[index].rwlock_initialized = 0;
-        }
-    }
-    pthread_mutex_destroy(&engine->tables_mutex);
+    pthread_mutex_destroy(&engine->execute_mutex);
 }
 
 void db_executor_bind_context(DbEngine *engine, DbResult *result) {

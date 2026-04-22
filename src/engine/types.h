@@ -97,8 +97,6 @@ typedef struct {
 /* 테이블 한 개를 메모리에 적재해 관리하는 캐시 구조입니다. */
 typedef struct {
     char table_name[256];         /* users 형태 이름 */
-    pthread_rwlock_t rwlock;      /* 테이블 단위 동시성 제어 */
-    int rwlock_initialized;       /* rwlock 초기화 여부 */
     FILE *file;                   /* 현재 열려 있는 CSV 파일 포인터 */
     FILE *delta_file;             /* append-only delta log writer */
     int delta_batch_open;          /* 현재 delta batch가 B만 쓰고 E 대기 중인지 */

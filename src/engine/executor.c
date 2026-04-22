@@ -1185,15 +1185,7 @@ static void free_table_storage(TableCache *tc) {
 }
 
 static void reset_table_cache(TableCache *tc) {
-    pthread_rwlock_t saved_rwlock;
-    int has_rwlock = tc->rwlock_initialized;
-
-    if (has_rwlock) saved_rwlock = tc->rwlock;
     memset(tc, 0, sizeof(TableCache));
-    if (has_rwlock) {
-        tc->rwlock = saved_rwlock;
-        tc->rwlock_initialized = 1;
-    }
     tc->file = NULL;
     tc->delta_file = NULL;
     tc->pk_idx = -1;
@@ -1201,9 +1193,6 @@ static void reset_table_cache(TableCache *tc) {
     tc->next_row_id = 1;
     tc->append_offset = -1;
     tc->id_index = bptree_create();
-    if (!has_rwlock && pthread_rwlock_init(&tc->rwlock, NULL) == 0) {
-        tc->rwlock_initialized = 1;
-    }
 }
 
 static int parse_long_value(const char *value, long *out) {
@@ -2984,14 +2973,11 @@ TableCache *get_table(const char *name) {
     FILE *f;
     TableCache *tc;
     int i;
-    DbEngine *engine = db_executor_current_engine();
 
-    if (!engine || !name || name[0] == '\0') return NULL;
-    pthread_mutex_lock(&engine->tables_mutex);
+    if (!db_executor_current_engine() || !name || name[0] == '\0') return NULL;
 
     for (i = 0; i < open_table_count; i++) {
         if (strcmp(open_tables[i].table_name, name) == 0) {
-            pthread_mutex_unlock(&engine->tables_mutex);
             return &open_tables[i];
         }
     }
@@ -2999,7 +2985,6 @@ TableCache *get_table(const char *name) {
     get_csv_filename_by_name(name, filename, sizeof(filename));
     f = fopen(filename, "r+b");
     if (!f) {
-        pthread_mutex_unlock(&engine->tables_mutex);
         printf("[error] table '%s' does not exist.\n", name);
         return NULL;
     }
@@ -3009,7 +2994,6 @@ TableCache *get_table(const char *name) {
         tc = &open_tables[open_table_count++];
     } else {
         fclose(f);
-        pthread_mutex_unlock(&engine->tables_mutex);
         printf("[error] table cache is full (max=%d).\n", MAX_TABLES);
         return NULL;
     }
@@ -3017,10 +3001,8 @@ TableCache *get_table(const char *name) {
     if (!load_table_contents(tc, name, f)) {
         free_table_storage(tc);
         if (tc == &open_tables[open_table_count - 1]) open_table_count--;
-        pthread_mutex_unlock(&engine->tables_mutex);
         return NULL;
     }
-    pthread_mutex_unlock(&engine->tables_mutex);
     return tc;
 }
 

@@ -31,7 +31,7 @@ typedef struct {
     DbConfig config;
     TableCache open_tables[MAX_TABLES];
     int open_table_count;
-    pthread_mutex_t tables_mutex;
+    pthread_mutex_t execute_mutex;
 } DbEngine;
 
 int db_engine_init(DbEngine *engine, const DbConfig *config);

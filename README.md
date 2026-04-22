@@ -13,9 +13,9 @@ Tiny Web Server 스타일의 `listen -> accept -> task queue -> worker -> doit(f
   - 요청 1개당 worker 1개만 `pthread_cond_signal()`
   - 종료 시에만 전체 `pthread_cond_broadcast()`
 - DB 엔진: `SQL-B-Tree`의 `lexer/parser/B+Tree/executor`를 서버 호출형 API로 재구성
-- 락 전략: 테이블별 `pthread_rwlock_t`
-  - `SELECT` = read lock
-  - `INSERT/UPDATE/DELETE` = write lock
+- 엔진 실행 전략: DB 엔진은 전역 `pthread_mutex_t`로 직렬화해 원래 단일 스레드 구조에 가깝게 유지
+  - API 서버는 멀티스레드로 요청을 받음
+  - DB 엔진 내부 실행은 한 번에 한 요청만 처리
 
 ## 디렉터리 구조
 
