@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch SQLprocessor",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/sqlsprocessor",
+            "args": [
+                "${input:sqlFile}"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "lldb",
+            "preLaunchTask": "Build SQLprocessor"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "sqlFile",
+            "type": "promptString",
+            "description": "실행할 SQL 파일 이름 또는 경로",
+            "default": "demo_select.sql"
+        }
+    ]
+}
