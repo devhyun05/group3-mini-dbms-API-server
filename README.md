@@ -17,7 +17,7 @@ UPDATE users SET name = 'Carolyn' WHERE email = 'carol@test.com';
 DELETE FROM users WHERE id = 3;
 ```
 
-<img width="1600" height="823" alt="thread_pool" src="https://github.com/user-attachments/assets/2dc88aa3-cb59-478c-ba4d-0b039e788d5c" />
+
 
 ## 흐름도
 
@@ -35,6 +35,8 @@ flowchart LR
 ```
 
 ## 스레드 풀 설계
+
+<img width="1600" height="823" alt="thread_pool" src="https://github.com/user-attachments/assets/2dc88aa3-cb59-478c-ba4d-0b039e788d5c" />
 
 ### 구조 개요
 
