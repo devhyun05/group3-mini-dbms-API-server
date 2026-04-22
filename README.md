@@ -28,7 +28,13 @@ DB 실행 구간이 mutex로 직렬화되어 있기 때문에, 특정 시점에 
 - 대기 워커가 늘어난 만큼 스케줄러의 **컨텍스트 스위칭 비용만 증가**한다.
 - 락 대기열이 길어져 **꼬리 지연(tail latency)도 악화**될 수 있다. 따라서 스레드 풀 크기는 하드웨어 병렬성의 상한인 **CPU 코어 수**로 고정했다. 이는 "DB 락을 잡은 워커 외의 다른 워커들이 네트워크 I/O, 응답 직렬화 등 mutex 바깥 작업을 동시에 수행할 수 있는 범위"와 정확히 일치한다.
 
-### 구성 값| 항목 | 값 | 비고 | | --- | --- | --- | | 워커 스레드 수 | `sysconf(_SC_NPROCESSORS_ONLN)` | 실행 환경의 CPU 코어 수에 자동 맞춤 | | Task Queue 용량 | 32 | Bounded queue — 초과 시 생산자 거절 | | 동기화 | `pthread_mutex_t` + `pthread_cond_t` | 큐 보호 및 빈 큐 대기 처리 |
+### 구성 값
+
+| 항목 | 값 | 비고 |
+| --- | --- | --- |
+| 워커 스레드 수 | `sysconf(_SC_NPROCESSORS_ONLN)` | 실행 환경의 CPU 코어 수에 자동 맞춤 |
+| Task Queue 용량 | `32` | Bounded queue — 초과 시 생산자 거절 |
+| 동기화 | `pthread_mutex_t + pthread_cond_t` | 큐 보호 및 빈 큐 대기 처리 |
 
 ## 3) 락 방식 정리
 
