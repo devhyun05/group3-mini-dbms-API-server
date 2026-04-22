@@ -21,7 +21,7 @@ DELETE FROM users WHERE id = 3;
 
 ## 흐름도
 
-<img width="1731" height="73" alt="image" src="https://github.com/user-attachments/assets/a14fef05-3a2b-45af-a2fb-6849cd924283" />
+<img width="769" height="636" alt="image" src="https://github.com/user-attachments/assets/55831449-8118-41d5-9f46-45e4e2bafe95" />
 
 ## 스레드 풀 설계
 
