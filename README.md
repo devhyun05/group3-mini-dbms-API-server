@@ -1,5 +1,6 @@
 # group3-mini-dbms-API-server
 
+## 흐름도 
 ```mermaid
 flowchart LR
     A["브라우저에서 요청 전송"] --> B["메인 스레드가 연결 수락"]
