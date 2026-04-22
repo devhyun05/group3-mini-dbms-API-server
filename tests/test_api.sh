@@ -1,7 +1,15 @@
 #!/bin/sh
 set -eu
 
-PORT=18080
+PORT="$(python3 - <<'PY'
+import socket
+
+sock = socket.socket()
+sock.bind(("127.0.0.1", 0))
+print(sock.getsockname()[1])
+sock.close()
+PY
+)"
 DATA_DIR="$(mktemp -d)"
 SERVER_PID=""
 
@@ -50,6 +58,10 @@ echo "$INSERT_RESPONSE" | grep '"affected_rows":1' >/dev/null
 GET_QUERY_CODE="$(curl -s -o /tmp/test_api_get_query.out -w '%{http_code}' "http://127.0.0.1:$PORT/query")"
 [ "$GET_QUERY_CODE" = "405" ]
 
+GET_ROOT_CODE="$(curl -s -o /tmp/test_api_get_root.out -w '%{http_code}' "http://127.0.0.1:$PORT/")"
+[ "$GET_ROOT_CODE" = "200" ]
+grep 'Mini DBMS Query Console' /tmp/test_api_get_root.out >/dev/null
+
 GET_HEALTH_CODE="$(curl -s -o /tmp/test_api_get_health.out -w '%{http_code}' "http://127.0.0.1:$PORT/health")"
 [ "$GET_HEALTH_CODE" = "404" ]
 
@@ -59,14 +71,16 @@ INVALID_JSON_CODE="$(curl -s -o /tmp/test_api_invalid_json.out -w '%{http_code}'
     -d '{"bad":"body"}')"
 [ "$INVALID_JSON_CODE" = "400" ]
 
-python3 - <<'PY' &
+PORT="$PORT" python3 - <<'PY' &
 import socket
 import time
+import os
 
 holders = []
+port = int(os.environ["PORT"])
 for _ in range(400):
     s = socket.socket()
-    s.connect(("127.0.0.1", 18080))
+    s.connect(("127.0.0.1", port))
     holders.append(s)
 time.sleep(4)
 for s in holders:

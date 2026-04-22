@@ -43,6 +43,15 @@ data/
 
 ## 지원 API
 
+### `GET /`
+
+브라우저용 SQL 콘솔 페이지를 반환합니다.
+
+- 큰 입력창에 SQL을 적고 실행할 수 있습니다.
+- `SELECT`는 결과를 HTML 테이블로 보여줍니다.
+- `INSERT/UPDATE/DELETE`는 성공/실패 메시지를 보여줍니다.
+- 실제 실행은 같은 서버의 `POST /query`를 호출합니다.
+
 ### `POST /query`
 
 요청 본문:
@@ -105,6 +114,12 @@ make
 ./mini_dbms_api_server 18080 data
 ```
 
+브라우저에서 열기:
+
+```bash
+open http://127.0.0.1:18080/
+```
+
 또는 데이터 디렉터리를 별도로 줄 수 있습니다.
 
 ```bash
@@ -143,6 +158,7 @@ make test
 - `tests/test_queue.c`
   - FIFO, full, shutdown 동작 검증
 - `tests/test_api.sh`
+  - `GET /` UI 진입 검증
   - `POST /query` 통합 테스트
   - `GET /query` 405 검증
   - `GET /health` 404 검증

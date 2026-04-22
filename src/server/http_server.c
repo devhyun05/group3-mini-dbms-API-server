@@ -244,6 +244,74 @@ static void send_json_response(int fd, int status_code, const char *status_text,
 
 static void send_error_response(int fd, int status_code, const char *status_text,
                                 const char *code, const char *message,
+                                double queue_wait_ms, double execute_ms);
+
+static void send_text_response(int fd, int status_code, const char *status_text,
+                               const char *content_type,
+                               const char *body, size_t body_len) {
+    char header[MAXBUF];
+
+    snprintf(header, sizeof(header),
+             "HTTP/1.0 %d %s\r\n"
+             "Content-Type: %s\r\n"
+             "Content-Length: %zu\r\n"
+             "Connection: close\r\n"
+             "\r\n",
+             status_code, status_text, content_type, body_len);
+    Rio_writen(fd, header, strlen(header));
+    if (body_len > 0) Rio_writen(fd, body, body_len);
+}
+
+static int read_text_file(const char *path, char **content, size_t *length) {
+    struct stat st;
+    FILE *file = NULL;
+    char *buffer = NULL;
+
+    if (!path || !content || !length) return 0;
+    *content = NULL;
+    *length = 0;
+
+    if (stat(path, &st) != 0 || st.st_size < 0) return 0;
+    file = fopen(path, "rb");
+    if (!file) return 0;
+
+    buffer = (char *)malloc((size_t)st.st_size + 1);
+    if (!buffer) {
+        fclose(file);
+        return 0;
+    }
+    if (st.st_size > 0 && fread(buffer, 1, (size_t)st.st_size, file) != (size_t)st.st_size) {
+        fclose(file);
+        free(buffer);
+        return 0;
+    }
+    fclose(file);
+
+    buffer[(size_t)st.st_size] = '\0';
+    *content = buffer;
+    *length = (size_t)st.st_size;
+    return 1;
+}
+
+static int serve_index_page(int fd, double queue_wait_ms) {
+    char *html = NULL;
+    size_t html_len = 0;
+
+    if (!read_text_file("static/index.html", &html, &html_len)) {
+        send_error_response(fd, 500, "Internal Server Error",
+                            "ui_missing",
+                            "Failed to load static/index.html.",
+                            queue_wait_ms, 0.0);
+        return 0;
+    }
+
+    send_text_response(fd, 200, "OK", "text/html; charset=utf-8", html, html_len);
+    free(html);
+    return 1;
+}
+
+static void send_error_response(int fd, int status_code, const char *status_text,
+                                const char *code, const char *message,
                                 double queue_wait_ms, double execute_ms) {
     StringBuilder sb = {0};
 
@@ -346,6 +414,10 @@ static void doit(ApiServer *server, int fd, double queue_wait_ms) {
     }
     if (!read_request_headers(&rio, &content_length)) {
         send_error_response(fd, 400, "Bad Request", "bad_headers", "Failed to read HTTP headers.", queue_wait_ms, 0.0);
+        return;
+    }
+    if (strcmp(uri, "/") == 0 && strcmp(method, "GET") == 0) {
+        serve_index_page(fd, queue_wait_ms);
         return;
     }
     if (strcmp(uri, "/query") != 0) {
