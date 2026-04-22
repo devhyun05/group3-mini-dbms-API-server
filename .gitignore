@@ -1,0 +1,9 @@
+mini_dbms_api_server
+mini_dbms_api_server.dSYM/
+tests/test_engine
+tests/test_queue
+data/*.delta
+data/*.idx
+tests/tmp_engine_data
+*.tmp
+*.log
