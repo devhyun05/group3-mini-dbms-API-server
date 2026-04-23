@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini DBMS Query Console</title>
+  <style>
+    :root {
+      --bg-top: #f4eee3;
+      --bg-bottom: #d8e3ea;
+      --panel: rgba(255, 252, 247, 0.88);
+      --panel-strong: rgba(255, 252, 247, 0.96);
+      --text: #1e2a32;
+      --muted: #62727d;
+      --accent: #145c76;
+      --accent-soft: #d1eef7;
+      --success: #2e6e45;
+      --success-soft: #dbf1e2;
+      --error: #9b3c2e;
+      --error-soft: #fde4df;
+      --border: rgba(20, 92, 118, 0.16);
+      --shadow: 0 18px 60px rgba(31, 49, 58, 0.12);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.76), transparent 38%),
+        radial-gradient(circle at bottom right, rgba(20, 92, 118, 0.18), transparent 28%),
+        linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    }
+
+    .page {
+      width: min(960px, calc(100vw - 32px));
+      margin: 32px auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .panel h2 {
+      margin: 0 0 18px;
+      font-size: 1.35rem;
+    }
+
+    .editor {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(30, 42, 50, 0.12);
+      background: #132028;
+    }
+
+    .editor-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    }
+
+    .editor-dots {
+      display: inline-flex;
+      gap: 7px;
+    }
+
+    .editor-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .editor-dots span:nth-child(1) { background: #ff7b72; }
+    .editor-dots span:nth-child(2) { background: #f2cc60; }
+    .editor-dots span:nth-child(3) { background: #50b87f; }
+
+    textarea {
+      width: 100%;
+      min-height: 240px;
+      padding: 18px;
+      border: 0;
+      resize: vertical;
+      outline: none;
+      background: transparent;
+      color: #f6fbff;
+      font-size: 15px;
+      line-height: 1.65;
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    }
+
+    .run-button {
+      padding: 13px 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #145c76, #1b7899);
+      color: #f7fdff;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+      box-shadow: 0 12px 28px rgba(20, 92, 118, 0.24);
+    }
+
+    .run-button:hover,
+    .run-button:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 34px rgba(20, 92, 118, 0.28);
+    }
+
+    .run-button:disabled {
+      opacity: 0.6;
+      transform: none;
+      cursor: wait;
+      box-shadow: none;
+    }
+
+    .ghost-button {
+      padding: 11px 14px;
+      border-radius: 12px;
+      color: var(--accent);
+      background: rgba(20, 92, 118, 0.08);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+    }
+
+    .ghost-button:hover,
+    .ghost-button:focus-visible {
+      background: rgba(20, 92, 118, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(20, 92, 118, 0.08);
+      color: var(--accent);
+      font-size: 13px;
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+    }
+
+    .status-box {
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid transparent;
+      margin-bottom: 18px;
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+      line-height: 1.55;
+    }
+
+    .status-box.success {
+      background: var(--success-soft);
+      border-color: rgba(46, 110, 69, 0.12);
+      color: var(--success);
+    }
+
+    .status-box.error {
+      background: var(--error-soft);
+      border-color: rgba(155, 60, 46, 0.14);
+      color: var(--error);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(30, 42, 50, 0.08);
+      background: var(--panel-strong);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 420px;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(30, 42, 50, 0.08);
+      font-size: 14px;
+    }
+
+    th {
+      background: rgba(20, 92, 118, 0.06);
+      color: var(--accent);
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    td {
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      color: #23313a;
+    }
+
+    .empty {
+      padding: 28px 18px;
+      text-align: center;
+      color: var(--muted);
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.42);
+      border: 1px dashed rgba(30, 42, 50, 0.12);
+    }
+
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <h2>SQL Console</h2>
+
+      <div class="editor">
+        <div class="editor-bar">
+          <span class="editor-dots"><span></span><span></span><span></span></span>
+          <span>query.sql</span>
+        </div>
+        <textarea id="sqlInput" spellcheck="false">SELECT * FROM users WHERE id = 1;</textarea>
+      </div>
+
+      <div class="toolbar">
+        <button id="runButton" class="run-button" type="button">실행하기</button>
+        <button id="clearButton" class="ghost-button" type="button">입력 초기화</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Execution Result</h2>
+
+      <div class="result-meta" id="resultMeta">
+        <span class="pill">대기 중</span>
+      </div>
+
+      <div id="statusArea" class="empty">
+        아직 실행된 쿼리가 없습니다. 위 입력창에 SQL을 적고 실행해보세요.
+      </div>
+
+      <div id="tableArea"></div>
+    </section>
+  </main>
+
+  <script>
+    const sqlInput = document.getElementById("sqlInput");
+    const runButton = document.getElementById("runButton");
+    const clearButton = document.getElementById("clearButton");
+    const resultMeta = document.getElementById("resultMeta");
+    const statusArea = document.getElementById("statusArea");
+    const tableArea = document.getElementById("tableArea");
+
+    function setRunningState(isRunning) {
+      runButton.disabled = isRunning;
+      runButton.textContent = isRunning ? "실행 중..." : "실행하기";
+    }
+
+    function setMeta(items) {
+      resultMeta.innerHTML = "";
+      items.forEach((item) => {
+        const span = document.createElement("span");
+        span.className = "pill";
+        span.textContent = item;
+        resultMeta.appendChild(span);
+      });
+    }
+
+    function renderStatus(message, type) {
+      statusArea.className = `status-box ${type}`;
+      statusArea.textContent = message;
+    }
+
+    function renderEmpty(message) {
+      statusArea.className = "empty";
+      statusArea.textContent = message;
+      tableArea.innerHTML = "";
+    }
+
+    function renderTable(columns, rows) {
+      if (!columns || columns.length === 0) {
+        tableArea.innerHTML = "";
+        return;
+      }
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "table-wrap";
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      columns.forEach((column) => {
+        const th = document.createElement("th");
+        th.textContent = column;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        row.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      wrapper.appendChild(table);
+
+      tableArea.innerHTML = "";
+      tableArea.appendChild(wrapper);
+    }
+
+    async function runQuery() {
+      const sql = sqlInput.value.trim();
+      if (!sql) {
+        renderEmpty("실행할 SQL을 먼저 입력해주세요.");
+        setMeta(["입력 필요"]);
+        return;
+      }
+
+      setRunningState(true);
+      tableArea.innerHTML = "";
+      renderStatus("서버에 쿼리를 전송하고 있습니다...", "success");
+      setMeta(["요청 전송 중"]);
+
+      try {
+        const response = await fetch("/query", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ sql })
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok || !payload.ok) {
+          renderStatus(
+            `${payload?.error?.code || "query_error"}: ${payload?.error?.message || "요청 처리에 실패했습니다."}`,
+            "error"
+          );
+          setMeta([
+            `HTTP ${response.status}`,
+            `queue ${Number(payload?.queue_wait_ms || 0).toFixed(3)} ms`,
+            `exec ${Number(payload?.execute_ms || 0).toFixed(3)} ms`
+          ]);
+          tableArea.innerHTML = "";
+          return;
+        }
+
+        const summary = [];
+        summary.push(payload.statement || "UNKNOWN");
+        summary.push(`rows ${payload.row_count ?? 0}`);
+        summary.push(`affected ${payload.affected_rows ?? 0}`);
+        if (payload.access_path) summary.push(`path ${payload.access_path}`);
+        summary.push(`queue ${Number(payload.queue_wait_ms || 0).toFixed(3)} ms`);
+        summary.push(`exec ${Number(payload.execute_ms || 0).toFixed(3)} ms`);
+        setMeta(summary);
+
+        if (payload.statement === "SELECT") {
+          if ((payload.row_count || 0) === 0) {
+            renderStatus("SELECT가 정상 실행되었지만 조회된 행이 없습니다.", "success");
+            tableArea.innerHTML = "";
+          } else {
+            renderStatus(`SELECT가 정상 실행되었습니다. ${payload.row_count}개의 행을 가져왔습니다.`, "success");
+            renderTable(payload.columns || [], payload.rows || []);
+          }
+          return;
+        }
+
+        renderStatus(
+          payload.message || `${payload.statement || "쿼리"}가 정상 실행되었습니다. affected_rows=${payload.affected_rows ?? 0}`,
+          "success"
+        );
+        tableArea.innerHTML = "";
+      } catch (error) {
+        renderStatus(`네트워크 오류: ${error.message}`, "error");
+        setMeta(["요청 실패"]);
+        tableArea.innerHTML = "";
+      } finally {
+        setRunningState(false);
+      }
+    }
+
+    runButton.addEventListener("click", runQuery);
+    clearButton.addEventListener("click", () => {
+      sqlInput.value = "";
+      sqlInput.focus();
+    });
+
+    sqlInput.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        runQuery();
+      }
+    });
+
+  </script>
+</body>
+</html>
