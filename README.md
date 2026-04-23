@@ -126,7 +126,45 @@ DB 실행 구간은 mutex로 직렬화되어 있기 때문에, 특정 시점에 
 
 - **인덱스를 사용하는 쿼리는 적은 수의 스레드에서도 충분히 높은 성능을 보였습니다.**  
   특히 `id 기준 인덱스 조회`는 `4개 스레드`에서 가장 높았고, `12개 이상`으로 늘렸을 때 오히려 성능이 감소했습니다.
+  
+## 테스트
 
+테스트는 네 단계로 나누어 구성했습니다.
+
+| 분류 | 목적 |
+| --- | --- |
+| Unit Test | 토크나이저, 파서, 작업 큐 같은 개별 모듈이 독립적으로 올바르게 동작하는지 검증 |
+| Integration Test | SQL 실행 경로와 락 동작이 엔진 단위에서 연결되어 정상 동작하는지 검증 |
+| Functional Test | 실제 API 서버에 요청을 보내 `INSERT`, `SELECT`, `UPDATE`, `DELETE`, `WHERE` 흐름이 정상 수행되는지 검증 |
+| Edge Case Test | 중복 PK/UK, 잘못된 메서드, 잘못된 JSON, 존재하지 않는 테이블, 빈 결과, `queue_full` 같은 예외 상황을 검증 |
+
+각 테스트는 다음 관점에 초점을 맞췄습니다.
+
+- **Unit Test**
+  - lexer / parser 기본 동작 검증
+  - `TaskQueue`의 FIFO, full, blocking, shutdown 동작 검증
+  - 스레드 풀의 기본 동기화 단위를 작은 범위에서 확인
+
+- **Integration Test**
+  - `db_engine_execute()` 기준 end-to-end SQL 실행 검증
+  - 엔진 재시작 후 데이터 유지 여부 검증
+  - `execute_mutex`를 통한 DB 실행 직렬화 동작 검증
+
+- **Functional Test**
+  - `GET /` 페이지 진입 확인
+  - `POST /query` 기반 CRUD 시나리오 검증
+  - 여러 요청을 동시에 보내도 서버가 정상 응답하는지 검증
+
+- **Edge Case Test**
+  - duplicate PK / duplicate UK 검증
+  - quoted string / empty result / missing table 검증
+  - `405`, `404`, `400`, `503 queue_full` 응답 검증
+
+전체 테스트는 아래 명령으로 실행할 수 있습니다.
+
+```bash
+make test
+```
 
 ## 마무리
 
